@@ -1,3 +1,12 @@
+## 台灣股市設定（優先套用）
+- 所有分析預設以台股為主，幣別為新台幣（TWD）
+- 歷史資料與財報優先使用 FinMind API
+- 即時當日資料使用台灣證交所 OpenAPI
+- 估值習慣：本益比、殖利率、股價淨值比
+- 技術分析：週KD搭配均線系統為主
+- 所有報告結尾須附上投資風險聲明
+- 法規遵循台灣金管會規範
+
 # Financial Services Plugins
 
 This is a marketplace of Claude Cowork plugins for financial services professionals. Each subdirectory is a standalone plugin.

@@ -1,48 +1,20 @@
 {
   "mcpServers": {
-    "daloopa": {
-      "type": "http",
-      "url": "https://mcp.daloopa.com/server/mcp"
+    "twse": {
+      "url": "https://openapi.twse.com.tw/v1",
+      "description": "台灣證交所官方API，提供上市股票當日即時資料"
     },
-    "morningstar": {
-      "type": "http",
-      "url": "https://mcp.morningstar.com/mcp"
+    "tpex": {
+      "url": "https://www.tpex.org.tw/openapi/v1",
+      "description": "櫃買中心API，提供上櫃股票當日資料"
     },
-    "sp-global": {
-      "type": "http",
-      "url": "https://kfinance.kensho.com/integrations/mcp"
-    },
-    "factset": {
-      "type": "http",
-      "url": "https://mcp.factset.com/mcp"
-    },
-    "moodys": {
-      "type": "http",
-      "url": "https://api.moodys.com/genai-ready-data/m1/mcp"
-    },
-    "mtnewswire": {
-      "type": "http",
-      "url": "https://vast-mcp.blueskyapi.com/mtnewswires"
-    },
-    "aiera": {
-      "type": "http",
-      "url": "https://mcp-pub.aiera.com"
-    },
-    "lseg": {
-      "type": "http",
-      "url": "https://api.analytics.lseg.com/lfa/mcp"
-    },
-    "pitchbook": {
-      "type": "http",
-      "url": "https://premium.mcp.pitchbook.com/mcp"
-    },
-    "chronograph": {
-      "type": "http",
-      "url": "https://ai.chronograph.pe/mcp"
-    },
-    "egnyte": {
-      "type": "http",
-      "url": "https://mcp-server.egnyte.com/mcp"
+    "finmind": {
+      "url": "https://api.finmindtrade.com/api/v4/data",
+      "description": "FinMind台股資料庫，歷史資料、財報、籌碼",
+      "auth": {
+        "type": "bearer",
+        "token": "${FINMIND_API_TOKEN}"
+      }
     }
   }
 }
