@@ -36,6 +36,34 @@ If you don't need Entra — static gateway config, Vertex with Google OAuth —
 leave it off. Users won't see a Microsoft prompt for a setup that doesn't
 involve Microsoft.
 
+**Bring your own Entra app.** By default the token is requested as Anthropic's
+multi-tenant app (`c2995f31-…`), so its `aud` claim is that GUID. If your
+bootstrap endpoint or token-exchange service requires `aud` to match an app
+registered in *your* tenant, set `graph_client_id=<your-app-guid>`. Register
+the app in Entra as a single-tenant **Single-page application** with redirect
+URI `https://pivot.claude.ai/msal-redirect.html`. You handle consent on your
+own app — [consent](consent.md) covers the default app only.
+
+**Send an access token instead of the ID token.** With `graph_client_id` alone
+the add-in still sends an *ID token* to your bootstrap endpoint — `aud` is your
+app's GUID, but there's no `scp` claim. If your endpoint is a standard OAuth2
+protected resource that validates `aud` + `scp`, or an RFC 8693 token-exchange
+service, set `entra_scope=api://<your-app-guid>/<scope>` and the add-in
+requests an *access token* for that scope instead. The Bearer it sends carries
+`aud` = your API's App ID URI and `scp` = the granted scope. In Entra, on your
+app registration: **Expose an API** (Application ID URI `api://<guid>`), add a
+scope such as `access_as_user`, and grant the same app delegated permission to
+it, then grant admin consent for the tenant. In the app manifest, set
+`accessTokenAcceptedVersion: 2` so the issued token uses v2.0 claims
+(`iss = login.microsoftonline.com/<tid>/v2.0`, `azp`, `preferred_username`);
+leave it unset and you get v1.0 tokens, which your validator may reject.
+`/.default` (requests all consented scopes) also works.
+
+`entra_scope` requires `graph_client_id` — the build script enforces this. Both
+are manifest-only: the add-in needs them to initialize NAA *before* it can read
+extension attrs or call your bootstrap endpoint, so neither can arrive through
+those layers. Leave `entra_scope` unset and the ID token is sent.
+
 ## Bootstrap endpoint
 
 `bootstrap_url` points to an HTTPS endpoint you host. At startup the add-in
@@ -73,8 +101,36 @@ browser WebView). Leave it unset and no custom collector is configured.
 `key1=value1,key2=value2` format as the standard
 `OTEL_EXPORTER_OTLP_HEADERS` variable. URL-encode the value in the manifest.
 
+`otlp_resource_attributes` adds attributes to the OpenTelemetry Resource on
+every span, in the same `key1=value1,key2=value2` format as the standard
+`OTEL_RESOURCE_ATTRIBUTES` variable. Use this when your collector requires
+specific resource attributes for routing or attribution (e.g.
+`team.name=platform,deployment.environment=prod`). The add-in already sets
+`service.name`, `service.version`, and `git.sha`; values you provide here are
+merged on top.
+
 Setting these here applies one collector org-wide; per-user routing belongs in
 [bootstrap](bootstrap.md#telemetry) or extension attrs.
+
+## Inference headers
+
+`inference_headers` is a JSON object of extra HTTP headers the add-in attaches
+to every request it sends to your gateway (`gateway_url`). Use it for
+accounting or cost-allocation tags your gateway expects — e.g., an internal
+application ID — so you don't need a header-injecting proxy in front of it.
+Applies only when using a gateway; direct cloud connections ignore it.
+
+```bash
+inference_headers='{"x-application-id":"app123"}'
+```
+
+The add-in treats the values as opaque. `Authorization`, `x-api-key`,
+`Content-Type`, `Host`, `Content-Length`, `User-Agent`, `Cookie`, and any
+`anthropic-*` / `x-amz-*` / `x-goog-*` header are reserved and silently dropped
+— they carry the add-in's own auth and protocol negotiation.
+
+Setting it here applies one header set org-wide; per-user values belong in
+[bootstrap](bootstrap.md#inference_headers).
 
 ## Auto-connect
 

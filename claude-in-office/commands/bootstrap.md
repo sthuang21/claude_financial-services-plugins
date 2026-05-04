@@ -116,7 +116,7 @@ a failed request with no response body and a console error naming the origin.
 
 ```
 GET <bootstrap_url>                            # after interpolation
-Authorization: Bearer <entra_id_token>         # only if entra_sso=1 in manifest
+Authorization: Bearer <entra_token>            # only if entra_sso=1 in manifest
 X-Claude-User-Agent: claude-<app>/<version>    # always sent
 ```
 
@@ -133,10 +133,16 @@ With `entra_sso=1`, validate the JWT before trusting it:
 
 | Claim | Check |
 |---|---|
-| `aud` | `c2995f31-11e7-4882-b7a7-ef9def0a0266` — the add-in's app ID. Anything else means the token wasn't minted for this. |
+| `aud` | `c2995f31-11e7-4882-b7a7-ef9def0a0266` — the add-in's default app ID, or your own app's GUID if you set `graph_client_id` in the [manifest](manifest.md#entra-sso). Anything else means the token wasn't minted for this. |
 | `iss` | `https://login.microsoftonline.com/<YOUR_TENANT_ID>/v2.0` — your tenant. Reject other tenants. |
 | `exp` | Not expired. Libraries handle this; don't hand-roll it. |
 | `oid` | The user's stable object ID. This is your lookup key — email (`upn`/`preferred_username`) can change, `oid` doesn't. |
+
+If you set `entra_scope` in the [manifest](manifest.md#entra-sso), the Bearer
+is an **access token**, not an ID token. Validate `aud` = your API's
+Application ID URI (`api://<guid>`, not the client GUID) and check `scp`
+contains the scope you defined. `iss`, `exp`, `oid`, and signature verification
+are the same.
 
 Signature verification needs Microsoft's JWKS
 (`https://login.microsoftonline.com/<TENANT_ID>/discovery/v2.0/keys`). Use a
@@ -166,14 +172,32 @@ Vertex `:rawPredict` URL the add-in constructs. `"bedrock"` needs no extras.
 
 ```json
 "otlp_endpoint": "https://otel-collector.your-domain.com",
-"otlp_headers": "Authorization=Bearer {{gateway_token}}"
+"otlp_headers": "Authorization=Bearer {{gateway_token}}",
+"otlp_resource_attributes": "team.name={{team}},deployment.environment=prod"
 ```
 
 `otlp_endpoint` is the base HTTPS URL of an OpenTelemetry collector you
 operate; the add-in appends `/v1/traces` and posts OTLP/HTTP. `otlp_headers`
 uses the standard `key1=value1,key2=value2` format and interpolates like any
-other value. The collector must allow CORS from the add-in origin — see
-[above](#cors--every-url-needs-it).
+other value. `otlp_resource_attributes` uses the same format (matching the
+standard `OTEL_RESOURCE_ATTRIBUTES` variable) and is merged into the
+OpenTelemetry Resource on every span — use it when your collector requires
+specific resource attributes for routing or attribution. The collector must
+allow CORS from the add-in origin — see [above](#cors--every-url-needs-it).
+
+### `inference_headers`
+
+```json
+"inference_headers": { "x-application-id": "app123" }
+```
+
+Extra HTTP headers attached to every request the add-in sends to your gateway
+(`gateway_url`) — typically accounting tags the gateway uses for cost
+allocation. Applies only to gateway deployments; direct cloud connections
+ignore it. The add-in treats them as opaque pass-through; `Authorization`,
+`x-api-key`,
+`Content-Type`, `Host`, `Content-Length`, `User-Agent`, `Cookie`, and any
+`anthropic-*` / `x-amz-*` / `x-goog-*` header are reserved and dropped.
 
 ### `mcp_servers`
 

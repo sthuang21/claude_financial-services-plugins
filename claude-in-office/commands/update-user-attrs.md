@@ -20,12 +20,13 @@ over manifest params, so whatever's here wins. All values are 256 chars max.
 | `gateway_token` | Per-user API key (rotation) |
 | `gateway_url` | Route different teams to different gateways |
 | `gateway_api_format` | Gateway speaks Bedrock/Vertex pass-through, not Anthropic `/v1/messages` |
+| `inference_headers` | Per-user accounting tag for the gateway (JSON; mind the 256-char cap) |
 | `bootstrap_url` | Per-user credential-vending endpoint |
 | `gcp_project_id` | Different teams on different GCP projects |
 | `gcp_region` | Data-residency override |
 | `google_client_id` `google_client_secret` | Different OAuth client per team (uncommon) |
 | `aws_role_arn` `aws_region` | Different Bedrock roles by team |
-| `otlp_endpoint` `otlp_headers` | Route telemetry to a team-specific OTEL collector |
+| `otlp_endpoint` `otlp_headers` `otlp_resource_attributes` | Route telemetry to a team-specific OTEL collector / tag spans with team-level resource attributes |
 
 ## One user
 
